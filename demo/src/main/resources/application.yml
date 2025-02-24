@@ -3,12 +3,28 @@ spring:
     url: jdbc:mysql://charmitshard.c9si8s82idtr.ap-northeast-2.rds.amazonaws.com:3306/charmitshard?serverTimezone=Asia/Seoul
     username: admin
     password: clftkadl7&
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
+  web:
+    cors:
+      allowed-origin-patterns: "*"
+      allowed-methods: "*"
+      allowed-headers: "*"
+      allow-credentials: true
+
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  tomcat:
+    uri-encoding: UTF-8  
