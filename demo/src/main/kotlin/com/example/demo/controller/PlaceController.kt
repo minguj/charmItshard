@@ -119,6 +119,9 @@ class PlaceController (
 
                     val infoDocument = Jsoup.connect(finalUrl)
                         .userAgent(c_randomUserAgent)
+                        .referrer("http://www.naver.com")
+                        .header("Accept-Language", "en-US,en;q=0.9")
+                        .header("Connection", "keep-alive")
                         .timeout(10000)
                         .get()
 
