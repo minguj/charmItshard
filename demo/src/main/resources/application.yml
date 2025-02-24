@@ -27,4 +27,4 @@ server:
       enabled: true
       force: true
   tomcat:
-    uri-encoding: UTF-8  
+    uri-encoding: UTF-8
