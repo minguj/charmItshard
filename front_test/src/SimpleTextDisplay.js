@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 export default function SimpleTextDisplay() {
+  const API_URL = process.env.REACT_APP_API_URL
+
   const [text, setText] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ export default function SimpleTextDisplay() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/search?query=${text}&page=1`
+        `${API_URL}/api/search?query=${text}&page=1`
       );
       const data = await response.json();
 
@@ -31,7 +33,7 @@ export default function SimpleTextDisplay() {
       console.log("PLACE : ", place)
       console.log("INFO : ", placeInfo)
       console.log("URL : ", placeUrl)
-      const response = await fetch("http://localhost:8080/api/savePlace", {
+      const response = await fetch(`${API_URL}/api/savePlace`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,7 +60,7 @@ export default function SimpleTextDisplay() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/getplaceurl?query=${encodeURIComponent(cleanTitle)}`
+        `${API_URL}/api/getplaceurl?query=${encodeURIComponent(cleanTitle)}`
       );
       const data = await response.json();
 
