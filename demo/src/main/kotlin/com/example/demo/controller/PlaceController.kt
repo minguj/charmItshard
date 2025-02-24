@@ -134,7 +134,7 @@ class PlaceController (
 
                     return mapOf("placeUrl" to finalUrl, "placeInfo" to placeInfo)
                 } else {
-                    return mapOf("error" to "❌ placeId를 찾을 수 없습니다.")
+                    return mapOf("error" to "❌ placeId를 찾을 수 없습니다..")
                 }
             } else {
                 return mapOf("error" to "❌ 가게 링크를 찾을 수 없습니다.")
