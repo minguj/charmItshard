@@ -90,9 +90,15 @@ class PlaceController (
             val randomUserAgent = faker.internet().userAgent()
             println("🕵️ 사용된 User-Agent: $randomUserAgent")
 
+            // 🕒 요청 간격 조절 (랜덤 지연: 1 ~ 3초)
+            sleep((1000..3000).random().toLong())
+
             // 🌐 Jsoup으로 페이지 요청 (랜덤 User-Agent)
             val document = Jsoup.connect(searchUrl)
                 .userAgent(randomUserAgent)
+                .referrer("http://www.naver.com")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .header("Connection", "keep-alive")
                 .timeout(10000)
                 .get()
 
