@@ -10,7 +10,6 @@
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "cros": "^1.0.1",
-    "puppeteer": "^24.2.1",
     "random-useragent": "^0.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
