@@ -19,11 +19,14 @@ data class PlaceEntity(
     val mapx: String?,
     val mapy: String?,
     
-    val placeUrl: String?, // 🔥 placeUrl 추가
+    val placeUrl: String?,
     
     val corkageAvailable: Boolean = false,
     val freeCorkage: Boolean = false,
 
     @Lob
-    val placeInfo: String? // JSON 문자열 저장
-)
+    val placeInfo: String?
+) {
+    // JPA를 위한 기본 생성자
+    constructor() : this(null, "", null, null, null, null, null, null, null, null, null, false, false, null)
+}

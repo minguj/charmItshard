@@ -1,11 +1,7 @@
-import SimpleTextDisplay from "./SimpleTextDisplay";
+import CorkageApp from "./components/CorkageApp";
 
 function App() {
-  return (
-    <div>
-      <SimpleTextDisplay />
-    </div>
-  );
+  return <CorkageApp />;
 }
 
 export default App;

@@ -9,6 +9,12 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URLEncoder
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Playwright
 import net.andreinc.mockneat.unit.user.Users
@@ -30,6 +36,16 @@ class PlaceController (
     private val placeRepository: PlaceRepository
 ) {
     private val faker = Faker()
+
+    // ✅ 저장된 장소 목록 조회 API 추가
+    @GetMapping("/places")
+    fun getAllPlaces(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "5") size: Int
+    ): Page<PlaceEntity> {
+        val pageable = PageRequest.of(page, size)
+        return placeRepository.findAll(pageable)
+    }
 
     @PostMapping("/savePlace")
     fun savePlace(@RequestBody request: PlaceRequest): ResponseEntity<String> {
