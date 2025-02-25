@@ -6,7 +6,7 @@ export default function CorkageApp() {
     return (
       <Router>
         <div style={{ maxWidth: "600px", margin: "50px auto", textAlign: "center" }}>
-          <h1>콜키지 메인 페이지</h1>
+          <h1>콜키지 정보 메인 페이지</h1>
           <div>
             <Link to="/places">
               <button style={buttonStyle}>콜키지 리스트 보기</button>
