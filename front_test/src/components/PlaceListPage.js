@@ -34,7 +34,7 @@ export default function PlaceListPage() {
   // 컴포넌트가 처음 렌더링될 때 데이터 로드
   useEffect(() => {
     fetchPlaces();
-  }, [page, fetchPlaces]);
+  }, [page]);
 
   // 더보기 버튼 클릭 시 페이지 증가
   const handleLoadMore = () => {
