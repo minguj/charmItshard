@@ -7,9 +7,6 @@ export default function SimpleTextDisplay() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [placeInfo, setPlaceInfo] = useState(null);
-  const [corkageStatus, setCorkageStatus] = useState("");
-
   // 읍/면/동 정보 추출 함수
   const getTownInfoFromAddress = (address) => {
     try {
