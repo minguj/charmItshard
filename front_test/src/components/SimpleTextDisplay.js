@@ -10,6 +10,17 @@ export default function SimpleTextDisplay() {
   const [placeInfo, setPlaceInfo] = useState(null);
   const [corkageStatus, setCorkageStatus] = useState("");
 
+  // 읍/면/동 정보 추출 함수
+  const getTownInfoFromAddress = (address) => {
+    try {
+        const tokens = address.split(" ");
+        return tokens.length >= 3 ? tokens[2] : ""; // 세 번째 토큰 추출 (예외 처리 포함)
+    } catch (error) {
+        console.error("주소 파싱 중 오류:", error);
+        return "";
+    }
+  };
+
   const searchPlaces = async () => {
     if (!text.trim()) return;
     setLoading(true);
@@ -57,10 +68,11 @@ export default function SimpleTextDisplay() {
   const getPlaceUrl = async (place) => {
     setLoading(true);
     const cleanTitle = place.title.replace(/<[^>]+>/g, "");
+    const townInfo = getTownInfoFromAddress(place.address);
 
     try {
       const response = await fetch(
-        `${API_URL}/api/getplaceurl?query=${encodeURIComponent(cleanTitle)}`
+        `${API_URL}/api/getplaceurl?query=${encodeURIComponent(cleanTitle + " " + townInfo)}`
       );
       const data = await response.json();
 
@@ -80,7 +92,12 @@ export default function SimpleTextDisplay() {
 
   const handleDetailClick = (place) => {
     const cleanTitle = place.title.replace(/<[^>]+>/g, "");
-    window.open(`https://map.naver.com/p/search/${cleanTitle}`, "_blank");
+    const townInfo = getTownInfoFromAddress(place.address);
+    
+    console.log("CLEAN TITLE: ", cleanTitle);
+    console.log("TOWN INFO: ", townInfo);
+    
+    window.open(`https://map.naver.com/p/search/${cleanTitle} ${townInfo}`, "_blank");
   };
 
   return (
