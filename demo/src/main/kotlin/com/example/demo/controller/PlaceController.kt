@@ -1,7 +1,13 @@
 package com.example.demo.controller
 
 import com.example.demo.entity.PlaceEntity
+import com.example.demo.entity.AddressTEntity
+import com.example.demo.entity.CategoryEntity
+
 import com.example.demo.repository.PlaceRepository
+import com.example.demo.repository.AddressTRepository
+import com.example.demo.repository.CategoryRepository
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -33,7 +39,9 @@ val naverClientSecret = dotenv["NAVER_CLIENT_SECRET"]
 @RestController
 @RequestMapping("/api")
 class PlaceController (
-    private val placeRepository: PlaceRepository
+    private val placeRepository: PlaceRepository,
+    private val addressTRepository: AddressTRepository,
+    private val categoryRepository: CategoryRepository
 ) {
     private val faker = Faker()
 
@@ -71,10 +79,39 @@ class PlaceController (
             placeInfo = request.placeInfo.joinToString(",") // 리스트를 문자열로 변환
         )
 
-        placeRepository.save(placeEntity)
-        return ResponseEntity.ok("데이터가 성공적으로 저장되었습니다!")
+        val existingPlace = placeRepository.findByPlaceUrl(request.placeUrl)
+        return if (existingPlace != null) {
+            // 기존 데이터가 있는 경우 업데이트
+            //placeEntity.placeUrl = existingPlace.placeUrl
+            placeRepository.save(placeEntity)
+            ResponseEntity.ok("해당 가게 정보를 업데이트 했습니다.")
+        } else {
+            // 새로운 데이터 추가
+            placeRepository.save(placeEntity)
+    
+            // addressT 테이블에 지역/구 정보 저장
+            val addressTokens = request.place.address?.split(" ") ?: emptyList()
+            if (addressTokens.size >= 2) {
+                val region = addressTokens[0]
+                val subregion = addressTokens[1]
+                if (!addressTRepository.existsByRegionAndSubregion(region, subregion)) {
+                    addressTRepository.save(AddressTEntity(region = region, subregion = subregion))
+                }
+            }
+    
+            // category 테이블에 중복 없이 저장
+            val categoryTokens = request.place.category?.split(">") ?: emptyList()
+            if (categoryTokens.size > 1) {
+                val mainCategory = categoryTokens[1].trim()
+                if (!categoryRepository.existsByName(mainCategory)) {
+                    categoryRepository.save(CategoryEntity(name = mainCategory))
+                }
+            }
+    
+            ResponseEntity.ok("데이터가 성공적으로 저장되었습니다!")
+        }
     }
-
+    
     @GetMapping("/search")
     fun searchPlaces(@RequestParam query: String, @RequestParam page: Int?): ResponseEntity<Any> {
         val display = 5

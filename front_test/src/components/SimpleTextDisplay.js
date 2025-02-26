@@ -55,7 +55,8 @@ export default function SimpleTextDisplay() {
       });
   
       if (response.ok) {
-        alert("데이터가 성공적으로 저장되었습니다!");
+        const message = await response.text(); // 서버에서 받은 메시지 읽기
+        alert(message); // 저장/업데이트 여부에 따른 메시지 출력
       } else {
         alert("데이터 저장에 실패했습니다.");
       }

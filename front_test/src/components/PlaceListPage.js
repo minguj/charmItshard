@@ -65,12 +65,20 @@ export default function PlaceListPage() {
               {place.title}
             </h2>
             <p style={{ margin: "8px 0", color: "#555" }}>{place.address}</p>
+            
             <p style={{ margin: "8px 0", color: "#444" }}>
               콜키지 가능: {place.corkageAvailable ? "가능" : "불가능"}
             </p>
+            
             <p style={{ margin: "8px 0", color: "#444" }}>
-              무료 콜키지: {place.freeCorkage ? "무료" : "유료"}
+              콜키지 비용:{" "}
+              {place.corkageAvailable
+                ? place.freeCorkage
+                  ? "무료"
+                  : "유료"
+                : "콜키지 불가능"}
             </p>
+
             {place.placeUrl && (
               <a
                 href={place.placeUrl}
