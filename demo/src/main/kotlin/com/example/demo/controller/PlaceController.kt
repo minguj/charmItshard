@@ -1,5 +1,7 @@
 package com.example.demo.controller
 
+import com.example.demo.util.TextUtils
+
 import com.example.demo.entity.PlaceEntity
 import com.example.demo.entity.AddressTEntity
 import com.example.demo.entity.CategoryEntity
@@ -58,12 +60,28 @@ class PlaceController (
     @PostMapping("/savePlace")
     fun savePlace(@RequestBody request: PlaceRequest): ResponseEntity<String> {
         println("🔍 Received request: $request")
-        val isCorkageAvailable = request.placeInfo.contains("콜키지 가능")
-        val isFreeCorkage = request.placeInfo.contains("무료")
+        val placeDesc = request.placeDesc?.joinToString(",") ?: ""
+
+        // ✅ 콜키지 가능 여부 확인 (placeDesc + request.placeInfo 모두 체크)
+        val isCorkageAvailable = listOf("콜키지", "corkage", "병입료", "주류반입")
+            .any { keyword -> 
+                placeDesc.contains(keyword) && 
+                !listOf("주류반입 금지", "주류반입금지").any { noKeyword -> 
+                    placeDesc.contains(noKeyword) 
+                }
+            } || request.placeInfo.contains("콜키지 가능")
+
+        // ✅ 무료 콜키지 여부 확인 (placeDesc + request.placeInfo 모두 체크)
+        val isFreeCorkage = listOf("콜키지 무료", "콜키지무료", "콜키지프리", "콜키지 프리", "무료", "프리")
+            .any { keyword -> 
+                placeDesc.contains(keyword) 
+            } || request.placeInfo.contains("무료")
 
         val cleanTitle = Jsoup.parse(request.place.title).text()
+        val existingPlace = placeRepository.findByPlaceUrl(request.placeUrl)
 
         val placeEntity = PlaceEntity(
+            id = existingPlace?.id,
             title = cleanTitle,
             link = request.place.link,
             category = request.place.category,
@@ -76,13 +94,12 @@ class PlaceController (
             placeUrl = request.placeUrl, // 🔥 placeUrl 저장
             corkageAvailable = isCorkageAvailable,
             freeCorkage = isFreeCorkage,
-            placeInfo = request.placeInfo.joinToString(",") // 리스트를 문자열로 변환
+            placeInfo = request.placeInfo.joinToString(","), // 리스트를 문자열로 변환
+            corkageInfolist = placeDesc
         )
 
-        val existingPlace = placeRepository.findByPlaceUrl(request.placeUrl)
         return if (existingPlace != null) {
             // 기존 데이터가 있는 경우 업데이트
-            //placeEntity.placeUrl = existingPlace.placeUrl
             placeRepository.save(placeEntity)
             ResponseEntity.ok("해당 가게 정보를 업데이트 했습니다.")
         } else {
@@ -137,16 +154,14 @@ class PlaceController (
     @GetMapping("/getplaceurl")
     fun getPlaceUrl(@RequestParam query: String): Map<String, Any> {
         val searchUrl = "https://m.search.naver.com/search.naver?query=$query"
-
+    
         try {
-            // 🔀 완전히 랜덤한 User-Agent 생성
             val randomUserAgent = faker.internet().userAgent()
             println("🕵️ 사용된 User-Agent: $randomUserAgent")
-
-            // 🕒 요청 간격 조절 (랜덤 지연: 1 ~ 3초)
-            sleep((1000..3000).random().toLong())
-
-            // 🌐 Jsoup으로 페이지 요청 (랜덤 User-Agent)
+    
+            sleep((1000..3000).random().toLong()) // 초기 대기 시간
+    
+            // 🔥 검색 결과 페이지를 한 번만 요청
             val document = Jsoup.connect(searchUrl)
                 .userAgent(randomUserAgent)
                 .referrer("http://www.naver.com")
@@ -154,56 +169,110 @@ class PlaceController (
                 .header("Connection", "keep-alive")
                 .timeout(10000)
                 .get()
-
-            // 🔗 검색 결과에서 링크 추출
-            val placeLinkElement = document.selectFirst("div#_title a")
-            val placeLink = placeLinkElement?.attr("href") ?: ""
-
+    
+            // ✅ 검색 결과 로딩 대기 (최대 10초)
+            val maxWaitTimeMs = 10000L
+            val checkIntervalMs = 500L
+            var elapsedTime = 0L
+            var placeLinkElement: org.jsoup.nodes.Element? = null
+    
+            while (elapsedTime < maxWaitTimeMs) {
+                placeLinkElement = document.selectFirst("div#_title a")
+                if (placeLinkElement != null) {
+                    println("✅ 검색 결과 페이지 로딩 완료!")
+                    break
+                }
+                sleep(checkIntervalMs)
+                elapsedTime += checkIntervalMs
+                println("⏳ 검색 결과 페이지 로딩 대기 중... ($elapsedTime ms)")
+            }
+    
+            if (placeLinkElement == null) {
+                return mapOf("error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.")
+            }
+    
+            val placeLink = placeLinkElement.attr("href") ?: ""
             if (placeLink.isNotEmpty()) {
                 val placeId = Regex("/restaurant/(\\d+)").find(placeLink)?.groupValues?.get(1)
-
+    
                 if (placeId != null) {
                     val finalUrl = "https://m.place.naver.com/restaurant/$placeId/information"
                     val c_randomUserAgent = faker.internet().userAgent()
                     println("🕵️ 사용된 User-Agent: $c_randomUserAgent")
-
-                    // 🕒 요청 간격 조절 (랜덤 지연: 1 ~ 3초)
+    
                     sleep((1000..3000).random().toLong())
-
+    
+                    // 🔥 상세 페이지를 한 번만 요청
                     val infoDocument = Jsoup.connect(finalUrl)
                         .userAgent(c_randomUserAgent)
                         .referrer("http://www.naver.com")
                         .header("Accept-Language", "en-US,en;q=0.9")
-                        .header("Connection", "keep-alive")
                         .timeout(10000)
                         .get()
-
-                    // 🧾 가게 정보 추출
+    
+                    // ✅ 상세 페이지 로딩 대기 (최대 10초)
+                    elapsedTime = 0L
+                    var placeInfoLoaded = false
+                    var placeDescLoaded = false
+    
+                    while (elapsedTime < maxWaitTimeMs) {
+                        placeInfoLoaded = infoDocument.selectFirst("div.woHEA ul.JU0iX li.c7TR6 div") != null
+                        placeDescLoaded = infoDocument.selectFirst("div.T8RFa.CEyr5") != null
+                        
+                        if (placeInfoLoaded && placeDescLoaded) {
+                            println("✅ 상세 페이지 로딩 완료!")
+                            break
+                        }
+    
+                        sleep(checkIntervalMs)
+                        elapsedTime += checkIntervalMs
+                        println("⏳ 상세 페이지 로딩 대기 중... ($elapsedTime ms)")
+                    }
+    
+                    if (!placeInfoLoaded || !placeDescLoaded) {
+                        return mapOf("error" to "❌ 상세 페이지 로딩에 실패했습니다.")
+                    }
+    
                     val placeInfo = infoDocument.select("div.woHEA ul.JU0iX li.c7TR6 div, div.woHEA ul.JU0iX li.c7TR6 span")
                         .map { it.text().trim() }
                         .filter { it.isNotEmpty() }
-
+    
+                    val placeDesc = infoDocument.select("div.T8RFa.CEyr5")
+                        .map { it.wholeText().trim() }
+                        .filter { it.isNotEmpty() }
+                        .joinToString("\n")
+    
                     println("✅ 가게 정보: $placeInfo")
-
-                    return mapOf("placeUrl" to finalUrl, "placeInfo" to placeInfo)
+                    println("📜 가게 설명: $placeDesc")
+    
+                    val corkageInfoList = TextUtils.extractCorkageInfo(placeDesc.trimIndent())
+                    println("📜 콜키지 추가정보: $corkageInfoList")
+    
+                    return mapOf(
+                        "placeUrl" to finalUrl,
+                        "placeInfo" to placeInfo,
+                        "placeDesc" to corkageInfoList
+                    )
                 } else {
-                    return mapOf("error" to "❌ placeId를 찾을 수 없습니다..")
+                    return mapOf("error" to "❌ placeId를 찾을 수 없습니다.")
                 }
             } else {
                 return mapOf("error" to "❌ 가게 링크를 찾을 수 없습니다.")
             }
-
+    
         } catch (e: Exception) {
             e.printStackTrace()
             return mapOf("error" to "JSoup 요청 실패: ${e.message}")
         }
-    }
+    }    
+
 }
 
 data class PlaceRequest(
     val place: PlaceData,
     val placeInfo: List<String>,
-    val placeUrl: String
+    val placeUrl: String,
+    val placeDesc: List<String>?
 )
 
 data class PlaceData(

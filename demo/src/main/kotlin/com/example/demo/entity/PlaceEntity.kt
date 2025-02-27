@@ -25,8 +25,11 @@ data class PlaceEntity(
     val freeCorkage: Boolean = false,
 
     @Lob
-    val placeInfo: String?
+    val placeInfo: String?,
+
+    @Lob
+    val corkageInfolist: String?, // 🔥 corkageInfolist 추가
 ) {
     // JPA를 위한 기본 생성자
-    constructor() : this(null, "", null, null, null, null, null, null, null, null, null, false, false, null)
+    constructor() : this(null, "", null, null, null, null, null, null, null, null, null, false, false, null, null)
 }

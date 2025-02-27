@@ -39,17 +39,14 @@ export default function SimpleTextDisplay() {
     }
   };
 
-  const savePlaceToDB = async (place, placeInfo, placeUrl) => {
+  const savePlaceToDB = async (place, placeInfo, placeUrl, placeDesc) => {
     try {
-      console.log("PLACE : ", place)
-      console.log("INFO : ", placeInfo)
-      console.log("URL : ", placeUrl)
       const response = await fetch(`${API_URL}/api/savePlace`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ place, placeInfo, placeUrl }),
+        body: JSON.stringify({ place, placeInfo, placeUrl, placeDesc }),
         mode: 'cors', 
         credentials: 'include' // 쿠키 사용 시 필요       
       });
@@ -79,7 +76,7 @@ export default function SimpleTextDisplay() {
 
       if (data.placeInfo) {
         setPlaceInfo(data.placeInfo);
-        await savePlaceToDB(place, data.placeInfo, data.placeUrl); // 🔥 RDS 저장 로직 추가        
+        await savePlaceToDB(place, data.placeInfo, data.placeUrl, data.placeDesc); // 🔥 RDS 저장 로직 추가        
       } else {
         alert("잠시 기다렸다가 재요청 하거나, 페이지 새로 고침 후 다시 시도해 보세요.");
       }

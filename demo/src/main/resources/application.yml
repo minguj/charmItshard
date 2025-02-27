@@ -11,7 +11,7 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-    show-sql: true
+    show-sql: false
   web:
     cors:
       allowed-origin-patterns: "*"
