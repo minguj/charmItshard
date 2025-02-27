@@ -78,7 +78,7 @@ export default function SimpleTextDisplay() {
         setPlaceInfo(data.placeInfo);
         await savePlaceToDB(place, data.placeInfo, data.placeUrl, data.placeDesc); // 🔥 RDS 저장 로직 추가        
       } else {
-        alert("잠시 기다렸다가 재요청 하거나, 페이지 새로 고침 후 다시 시도해 보세요.");
+        alert("실시간 반영이 되지 않았습니다. 서버에 작업요청이 되었으니 추후 확인하시거나 새로고침 후 다시 시도해 주세요.");
       }
     } catch (error) {
       console.error("네이버 검색 오류:", error);

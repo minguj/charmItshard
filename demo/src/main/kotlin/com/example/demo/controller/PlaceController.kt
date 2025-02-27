@@ -202,7 +202,7 @@ class PlaceController (
     
                     sleep((1000..3000).random().toLong())
     
-                    // 🔥 상세 페이지를 한 번만 요청
+                    // 🔥 상세 페이지를 한 번만 요청 잘 안붙는데
                     val infoDocument = Jsoup.connect(finalUrl)
                         .userAgent(c_randomUserAgent)
                         .referrer("http://www.naver.com")
