@@ -1,6 +1,8 @@
 package com.example.demo.controller
 
 import com.example.demo.util.TextUtils
+import com.example.demo.util.TextUtils.convertTMToWGS84
+import com.example.demo.util.TextUtils.calculateDistance
 
 import com.example.demo.entity.PlaceEntity
 import com.example.demo.entity.AddressTEntity
@@ -30,6 +32,8 @@ import net.andreinc.mockneat.unit.user.Users
 import org.jsoup.Jsoup
 import org.jsoup.Connection
 import kotlin.random.Random
+import kotlin.text.toDouble
+import kotlin.text.toDoubleOrNull
 import java.lang.Thread.sleep
 import net.datafaker.Faker
 
@@ -37,6 +41,7 @@ import io.github.cdimascio.dotenv.dotenv
 val dotenv = dotenv()
 val naverClientId = dotenv["NAVER_CLIENT_ID"]
 val naverClientSecret = dotenv["NAVER_CLIENT_SECRET"]
+val openApiSubwayUrl = dotenv["OPENAPI_SUBWAY_URL"]
 
 @RestController
 @RequestMapping("/api")
@@ -47,19 +52,28 @@ class PlaceController (
 ) {
     private val faker = Faker()
 
-    // ✅ 저장된 장소 목록 조회 API 추가
+    // ✅ 저장된 장소 목록 조회 API (필터링 기능 추가)
     @GetMapping("/places")
     fun getAllPlaces(
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "5") size: Int
+        @RequestParam(defaultValue = "5") size: Int,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) city: String?,
+        @RequestParam(required = false) district: String?
     ): Page<PlaceEntity> {
         val pageable = PageRequest.of(page, size)
-        return placeRepository.findAll(pageable)
+
+        return if (category.isNullOrEmpty() && city.isNullOrEmpty() && district.isNullOrEmpty()) {
+            // ✅ 필터 조건이 없는 경우, 전체 조회
+            placeRepository.findAll(pageable)
+        } else {
+            // ✅ 필터 조건이 있는 경우, 필터링 적용
+            placeRepository.findByFilters(category, city, district, pageable)
+        }
     }
 
     @PostMapping("/savePlace")
     fun savePlace(@RequestBody request: PlaceRequest): ResponseEntity<String> {
-        println("🔍 Received request: $request")
         val placeDesc = request.placeDesc?.joinToString(",") ?: ""
 
         // ✅ 콜키지 가능 여부 확인 (placeDesc + request.placeInfo 모두 체크)
@@ -77,8 +91,21 @@ class PlaceController (
                 placeDesc.contains(keyword) 
             } || request.placeInfo.contains("무료")
 
-        val cleanTitle = Jsoup.parse(request.place.title).text()
+        val cleanTitle = Jsoup.parse(request.place.title).text()   
+
+        val (placemapx, placemapy) = convertTMToWGS84(request.place.mapx?.toDouble() ?: 0.0, request.place.mapy?.toDouble() ?: 0.0)
         val existingPlace = placeRepository.findByPlaceUrl(request.placeUrl)
+        
+        // ✅ 외부 지하철 API 호출
+        val subwayInfo = getNearestSubwayInfo(placemapy, placemapx) ?: emptyList()
+
+        val formattedSubList = subwayInfo.map { station ->  
+            val stationName = station["station_name"]?.toString() ?: "Unknown"
+            val lineName = station["line_name"]?.toString() ?: "Unknown"
+            val distance = (station["distance_m"] as? Double)?.toInt() ?: 0
+            "[$stationName,$lineName,${distance}m]"
+        }.joinToString(",")
+        println("🔍 변환된 리스트: $formattedSubList")
 
         val placeEntity = PlaceEntity(
             id = existingPlace?.id,
@@ -95,7 +122,8 @@ class PlaceController (
             corkageAvailable = isCorkageAvailable,
             freeCorkage = isFreeCorkage,
             placeInfo = request.placeInfo.joinToString(","), // 리스트를 문자열로 변환
-            corkageInfolist = placeDesc
+            corkageInfolist = placeDesc,
+            nearbySubways = formattedSubList
         )
 
         return if (existingPlace != null) {
@@ -171,7 +199,7 @@ class PlaceController (
                 .get()
     
             // ✅ 검색 결과 로딩 대기 (최대 10초)
-            val maxWaitTimeMs = 10000L
+            val maxWaitTimeMs = 3000L
             val checkIntervalMs = 500L
             var elapsedTime = 0L
             var placeLinkElement: org.jsoup.nodes.Element? = null
@@ -242,9 +270,6 @@ class PlaceController (
                         .filter { it.isNotEmpty() }
                         .joinToString("\n")
     
-                    println("✅ 가게 정보: $placeInfo")
-                    println("📜 가게 설명: $placeDesc")
-    
                     val corkageInfoList = TextUtils.extractCorkageInfo(placeDesc.trimIndent())
                     println("📜 콜키지 추가정보: $corkageInfoList")
     
@@ -266,6 +291,29 @@ class PlaceController (
         }
     }    
 
+    private fun getNearestSubwayInfo(mapx: Double, mapy: Double): List<Map<String, Any>> {
+        val response = RestTemplate().getForObject(openApiSubwayUrl, Map::class.java) as Map<String, Any>
+    
+        val subwayData = (response["subwayStationMaster"] as? Map<*, *>)?.get("row") as? List<Map<String, Any>> ?: emptyList()
+    
+        // 500m 이내 역 필터링
+        val nearbyStations = subwayData.mapNotNull { subway ->
+            val yPoint = (subway["LAT"] as? String)?.toDoubleOrNull() ?: return@mapNotNull null
+            val xPoint = (subway["LOT"] as? String)?.toDoubleOrNull() ?: return@mapNotNull null
+            val distance = calculateDistance(mapy, mapx, yPoint, xPoint)
+    
+            if (distance <= 800) {
+                mapOf(
+                    "station_name" to (subway["BLDN_NM"]?.toString() ?: "Unknown Station"),
+                    "line_name" to (subway["ROUTE"]?.toString() ?: "Unknown Line"),
+                    "distance_m" to distance
+                )
+            } else {
+                null
+            }
+        }    
+        return nearbyStations
+    }
 }
 
 data class PlaceRequest(

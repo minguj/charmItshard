@@ -7,20 +7,25 @@ export default function PlaceListPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
 
-  // API 호출 함수
-  const fetchPlaces = async () => {
+  // 📤 API 호출 함수
+  const fetchPlaces = async (reset = false) => {
+    console.log("📤 fetchPlaces() 호출됨");
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/places?page=${page}&size=5`);
+      const response = await fetch(
+        `${API_URL}/api/places?page=${page}&size=5&category=${selectedCategory}&city=${selectedCity}&district=${selectedDistrict}`
+      );
       if (response.ok) {
         const data = await response.json();
-        if (data.content.length > 0) {
-          setPlaces((prevPlaces) => [...prevPlaces, ...data.content]);
-          setHasMore(!data.last); // 마지막 페이지인지 확인
-        } else {
-          setHasMore(false);
-        }
+        console.log("📥 Received data from API:", data);
+        setPlaces((prevPlaces) => (reset ? data.content : [...prevPlaces, ...data.content]));
+        setHasMore(!data.last);
       } else {
         console.error("데이터 불러오기 실패");
       }
@@ -31,22 +36,153 @@ export default function PlaceListPage() {
     }
   };
 
-  // 컴포넌트가 처음 렌더링될 때 데이터 로드
-  useEffect(() => {
-    fetchPlaces();
-  }, [page]);
-
-  // 더보기 버튼 클릭 시 페이지 증가
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      setPage((prevPage) => prevPage + 1);
+  // 📥 카테고리 데이터 가져오기
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/getcategory`);
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error("카테고리 API 호출 오류:", error);
     }
+  };
+
+  // 📥 주소 데이터 가져오기
+  const fetchAddresses = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/getaddress`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("주소 데이터:", data);
+        setAddresses(data);
+      }
+    } catch (error) {
+      console.error("주소 API 호출 오류:", error);
+    }
+  };
+
+  // ✅ 페이지 로드 및 필터 변경 시 API 호출
+  useEffect(() => {
+    console.log("📤 Sending request to API with:", {
+      selectedCategory,
+      selectedCity,
+      selectedDistrict,
+    });
+    fetchPlaces(page === 0); // page가 0이면 데이터를 초기화
+  }, [page, selectedCategory, selectedCity, selectedDistrict]);
+
+  // ✅ 초기 데이터 (카테고리, 주소) 로드
+  useEffect(() => {
+    fetchCategories();
+    fetchAddresses();
+  }, []);
+
+  // ✅ 필터 변경 시 페이지 및 데이터 초기화
+  const handleFilterChange = () => {
+    setPage(0);
+    setPlaces([]);
+  };
+
+  const subwayLineColors  = {
+      "1호선": "#0052A4",
+      "2호선": "#00A84D",
+      "3호선": "#EF7C1C",
+      "4호선": "#00A5DE",
+      "5호선": "#996CAC",
+      "6호선": "#CD7C2F",
+      "7호선": "#747F00",
+      "8호선": "#E6186C",
+      "9호선": "#BDB092",
+      "경의중앙선": "#77C4A3",
+      "수인분당선": "#F5A200",
+      "신분당선": "#D4003B",
+      "공항철도": "#0090D2",
+      "김포골드라인": "#A17800",
+      "서해선": "#81A914",
+      "의정부경전철": "#FDA600",
+      "용인경전철": "#509F22",
+      "우이신설선": "#B0CE18",
+      "인천1호선": "#7CA8D5",
+      "인천2호선": "#ED8B00",
+      "대구1호선": "#D93F5C",
+      "대구2호선": "#00AA80",
+      "대구3호선": "#FFB100",
+      "대전1호선": "#007448",
+      "광주1호선": "#009088",
+      "SRT": "#5A2149",
+      "수도권 광역급행철도": "#9A6292",
+  }
+
+  
+  const getSubwayInfo = (subwayData) => {
+    if (!subwayData) return [];
+  
+    return subwayData.split("],[").map((item) => {
+      const cleanedItem = item.replace(/\[|\]/g, ""); // 대괄호 제거
+      const [station, line, distance] = cleanedItem.split(",");
+      return { station, line, distance };
+    });
   };
 
   return (
     <div style={{ maxWidth: "600px", margin: "50px auto", textAlign: "center" }}>
-      <h1>콜키지 가능한 장소 리스트</h1>
-      
+      <h1 style={{ fontSize: "2rem", marginBottom: "20px", color: "#333" }}>콜키지 가능한 장소 리스트</h1>
+
+      <div style={{ marginBottom: "20px" }}>
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            handleFilterChange();
+          }}
+          style={{ padding: "8px", margin: "5px", borderRadius: "4px" }}
+        >
+          <option value="">카테고리 선택</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedCity}
+          onChange={(e) => {
+            setSelectedCity(e.target.value);
+            setSelectedDistrict("");
+            handleFilterChange();
+          }}
+          style={{ padding: "8px", margin: "5px", borderRadius: "4px" }}
+        >
+          <option value="">시/도 전체</option>
+          {[...new Set(addresses.map((addr) => addr.region))].map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedDistrict}
+          onChange={(e) => {
+            setSelectedDistrict(e.target.value);
+            handleFilterChange();
+          }}
+          style={{ padding: "8px", margin: "5px", borderRadius: "4px" }}
+        >
+          <option value="">시/군/구 전체</option>
+          {addresses
+            .filter((addr) => addr.region === selectedCity)
+            .map((addr) => (
+              <option key={addr.id} value={addr.subregion}>
+                {addr.subregion}
+              </option>
+            ))}
+        </select>
+      </div>
+
       <div style={{ marginTop: "20px" }}>
         {places.map((place) => (
           <div
@@ -61,23 +197,40 @@ export default function PlaceListPage() {
               backgroundColor: "#fff",
             }}
           >
-            <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#333" }}>
-              {place.title}
-            </h2>
+            <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#333" }}>{place.title}</h2>
             <p style={{ margin: "8px 0", color: "#555" }}>{place.address}</p>
-            
             <p style={{ margin: "8px 0", color: "#444" }}>
               콜키지 가능: {place.corkageAvailable ? "가능" : "불가능"}
             </p>
-            
             <p style={{ margin: "8px 0", color: "#444" }}>
-              콜키지 비용:{" "}
-              {place.corkageAvailable
-                ? place.freeCorkage
-                  ? "무료"
-                  : "유료"
-                : "콜키지 불가능"}
+              콜키지 비용: {place.corkageAvailable ? (place.freeCorkage ? "무료" : "유료") : "콜키지 불가능"}
             </p>
+
+            {/* ✅ 지하철 정보 추가 (색상 적용) */}
+            {place.nearbySubways && place.nearbySubways.length > 0 && (
+              <div style={{ margin: "8px 0", color: "#444" }}>
+                <p style={{ fontWeight: "bold" }}>🚇 가까운 지하철</p>
+                <ul style={{ listStyleType: "none", padding: 0 }}>
+                  {getSubwayInfo(place.nearbySubways).map((subway, index) => (
+                    <li key={index} style={{ marginBottom: "5px" }}>
+                      <span style={{ fontWeight: "bold" }}>{subway.station}</span> - 
+                      <span
+                        style={{
+                          backgroundColor: subwayLineColors[subway.line] || "#666",
+                          color: "#fff",
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                          marginLeft: "5px",
+                        }}
+                      >
+                        {subway.line}
+                      </span>
+                      <span style={{ marginLeft: "5px", color: "#888" }}>{subway.distance}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}  
 
             {place.placeUrl && (
               <a
@@ -88,7 +241,7 @@ export default function PlaceListPage() {
               >
                 상세보기
               </a>
-            )}
+            )}       
           </div>
         ))}
       </div>
@@ -97,7 +250,7 @@ export default function PlaceListPage() {
 
       {!loading && hasMore && (
         <button
-          onClick={handleLoadMore}
+          onClick={() => setPage((prevPage) => prevPage + 1)}
           style={{
             padding: "10px 20px",
             marginTop: "20px",
@@ -106,6 +259,7 @@ export default function PlaceListPage() {
             backgroundColor: "#4CAF50",
             color: "#fff",
             cursor: "pointer",
+            transition: "background 0.3s",
           }}
         >
           더보기
