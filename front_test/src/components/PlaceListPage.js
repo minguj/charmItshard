@@ -12,15 +12,21 @@ export default function PlaceListPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // 🔍 상호명 입력 상태 추가
+  const [searchTerm, setSearchTerm] = useState("");
+  const [subwaySearchTerm, setSubwaySearchTerm] = useState("");
 
   // 📤 API 호출 함수
   const fetchPlaces = async (reset = false) => {
     console.log("📤 fetchPlaces() 호출됨");
     setLoading(true);
+
+    const cleanedSubwaySearchTerm = subwaySearchTerm.endsWith('역') 
+    ? subwaySearchTerm.slice(0, -1).trim() 
+    : subwaySearchTerm.trim();
+
     try {
       const response = await fetch(
-        `${API_URL}/api/places?page=${page}&size=5&category=${selectedCategory}&city=${selectedCity}&district=${selectedDistrict}&searchTerm=${searchTerm}`
+        `${API_URL}/api/places?page=${page}&size=5&category=${selectedCategory}&city=${selectedCity}&district=${selectedDistrict}&searchTerm=${searchTerm}&subway=${cleanedSubwaySearchTerm}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -88,6 +94,9 @@ export default function PlaceListPage() {
 
   // ✅ 검색 버튼 클릭 이벤트
   const handleSearch = () => {
+    setSelectedCategory("");
+    setSelectedCity("");
+    setSelectedDistrict("");
     handleFilterChange(); // 페이지 및 데이터 초기화
     fetchPlaces(page === 0); // page가 0이면 데이터를 초기화
   };
@@ -144,6 +153,36 @@ export default function PlaceListPage() {
           placeholder="상호명을 입력하세요"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: "8px",
+            width: "70%",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+            marginRight: "10px",
+          }}
+        />
+        <button
+          onClick={handleSearch}
+          style={{
+            padding: "8px 15px",
+            borderRadius: "4px",
+            border: "none",
+            backgroundColor: "#2196F3",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          검색
+        </button>
+      </div>
+
+      {/* 🚇 지하철역 검색 입력창 및 버튼 */}
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          type="text"
+          placeholder="지하철역을 입력하세요"
+          value={subwaySearchTerm}
+          onChange={(e) => setSubwaySearchTerm(e.target.value)}
           style={{
             padding: "8px",
             width: "70%",

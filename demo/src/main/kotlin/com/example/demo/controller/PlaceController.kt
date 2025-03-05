@@ -63,10 +63,11 @@ class PlaceController (
         @RequestParam(required = false) category: String?,
         @RequestParam(required = false) city: String?,
         @RequestParam(required = false) district: String?,
-        @RequestParam(required = false) searchTerm: String?
+        @RequestParam(required = false) searchTerm: String?,
+        @RequestParam(required = false) subway: String?,
     ): Page<PlaceEntity> {
         val pageable = PageRequest.of(page, size)
-        return placeRepository.findByFilters(category, city, district, searchTerm, pageable)
+        return placeRepository.findByFilters(category, city, district, searchTerm, subway, pageable)
     }
 
     @PostMapping("/savePlace")
