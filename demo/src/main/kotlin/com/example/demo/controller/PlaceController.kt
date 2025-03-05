@@ -7,10 +7,12 @@ import com.example.demo.util.TextUtils.calculateDistance
 import com.example.demo.entity.PlaceEntity
 import com.example.demo.entity.AddressTEntity
 import com.example.demo.entity.CategoryEntity
+import com.example.demo.entity.NeedInfoEntity
 
 import com.example.demo.repository.PlaceRepository
 import com.example.demo.repository.AddressTRepository
 import com.example.demo.repository.CategoryRepository
+import com.example.demo.repository.NeedInfoRepository
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
@@ -48,7 +50,8 @@ val openApiSubwayUrl = dotenv["OPENAPI_SUBWAY_URL"]
 class PlaceController (
     private val placeRepository: PlaceRepository,
     private val addressTRepository: AddressTRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val needInfoRepository: NeedInfoRepository
 ) {
     private val faker = Faker()
 
@@ -216,6 +219,13 @@ class PlaceController (
             }
     
             if (placeLinkElement == null) {
+                needInfoRepository.save(
+                    NeedInfoEntity(
+                        searchUrl = searchUrl,
+                        finalUrl = null,
+                        process = false
+                    )
+                )
                 return mapOf("error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.")
             }
     
@@ -258,6 +268,13 @@ class PlaceController (
                     }
     
                     if (!placeInfoLoaded || !placeDescLoaded) {
+                        needInfoRepository.save(
+                            NeedInfoEntity(
+                                searchUrl = null,
+                                finalUrl = finalUrl,
+                                process = false
+                            )
+                        )
                         return mapOf("error" to "❌ 상세 페이지 로딩에 실패했습니다.")
                     }
     
