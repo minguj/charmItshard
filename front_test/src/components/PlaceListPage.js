@@ -12,6 +12,7 @@ export default function PlaceListPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // 🔍 상호명 입력 상태 추가
 
   // 📤 API 호출 함수
   const fetchPlaces = async (reset = false) => {
@@ -19,7 +20,7 @@ export default function PlaceListPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${API_URL}/api/places?page=${page}&size=5&category=${selectedCategory}&city=${selectedCity}&district=${selectedDistrict}`
+        `${API_URL}/api/places?page=${page}&size=5&category=${selectedCategory}&city=${selectedCity}&district=${selectedDistrict}&searchTerm=${searchTerm}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -85,6 +86,12 @@ export default function PlaceListPage() {
     setPlaces([]);
   };
 
+  // ✅ 검색 버튼 클릭 이벤트
+  const handleSearch = () => {
+    handleFilterChange(); // 페이지 및 데이터 초기화
+    fetchPlaces(page === 0); // page가 0이면 데이터를 초기화
+  };
+
   const subwayLineColors  = {
       "1호선": "#0052A4",
       "2호선": "#00A84D",
@@ -129,6 +136,36 @@ export default function PlaceListPage() {
   return (
     <div style={{ maxWidth: "600px", margin: "50px auto", textAlign: "center" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "20px", color: "#333" }}>콜키지 가능한 장소 리스트</h1>
+
+      {/* 🔍 검색 입력창 및 버튼 추가 */}
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          type="text"
+          placeholder="상호명을 입력하세요"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: "8px",
+            width: "70%",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+            marginRight: "10px",
+          }}
+        />
+        <button
+          onClick={handleSearch}
+          style={{
+            padding: "8px 15px",
+            borderRadius: "4px",
+            border: "none",
+            backgroundColor: "#2196F3",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          검색
+        </button>
+      </div>
 
       <div style={{ marginBottom: "20px" }}>
         <select

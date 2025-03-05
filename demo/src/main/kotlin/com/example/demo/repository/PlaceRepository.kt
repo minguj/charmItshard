@@ -21,11 +21,13 @@ interface PlaceRepository : JpaRepository<PlaceEntity, Long> {
         AND (:category IS NULL OR p.category LIKE CONCAT('%', :category, '%'))
         AND (:city IS NULL OR p.address LIKE CONCAT('%', :city, '%'))
         AND (:district IS NULL OR p.address LIKE CONCAT('%', :district, '%'))
+        AND (:searchTerm IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
     """)
     fun findByFilters(
         @Param("category") category: String?,
         @Param("city") city: String?,
         @Param("district") district: String?,
+        @Param("searchTerm") searchTerm: String?,
         pageable: Pageable
     ): Page<PlaceEntity>
 }
