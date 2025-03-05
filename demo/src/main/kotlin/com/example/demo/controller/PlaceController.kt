@@ -65,14 +65,7 @@ class PlaceController (
         @RequestParam(required = false) district: String?
     ): Page<PlaceEntity> {
         val pageable = PageRequest.of(page, size)
-
-        return if (category.isNullOrEmpty() && city.isNullOrEmpty() && district.isNullOrEmpty()) {
-            // ✅ 필터 조건이 없는 경우, 전체 조회
-            placeRepository.findAll(pageable)
-        } else {
-            // ✅ 필터 조건이 있는 경우, 필터링 적용
-            placeRepository.findByFilters(category, city, district, pageable)
-        }
+        return placeRepository.findByFilters(category, city, district, pageable)
     }
 
     @PostMapping("/savePlace")

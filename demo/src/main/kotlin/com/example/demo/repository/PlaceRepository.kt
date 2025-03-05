@@ -17,7 +17,8 @@ interface PlaceRepository : JpaRepository<PlaceEntity, Long> {
     // ✅ 필터링 메서드 추가
     @Query("""
         SELECT p FROM PlaceEntity p
-        WHERE (:category IS NULL OR p.category LIKE CONCAT('%', :category, '%'))
+        WHERE p.placeUrl IS NOT NULL AND TRIM(p.placeUrl) <> ''
+        AND (:category IS NULL OR p.category LIKE CONCAT('%', :category, '%'))
         AND (:city IS NULL OR p.address LIKE CONCAT('%', :city, '%'))
         AND (:district IS NULL OR p.address LIKE CONCAT('%', :district, '%'))
     """)
