@@ -53,13 +53,23 @@ export default function SimpleTextDisplay() {
   
       if (response.ok) {
         const message = await response.text(); // 서버에서 받은 메시지 읽기
-        alert(message); // 저장/업데이트 여부에 따른 메시지 출력
+        if (message === '0') {
+          alert("데이터 저장 오류.");
+          return null;
+        } else {
+          if (Array.isArray(placeInfo) && placeInfo.length > 0) {
+            alert("데이터 수집 내용이 업데이트 되었습니다. 콜키지 리스트에서 결과를 확인해 보세요.");
+          }
+          return message;
+        }
       } else {
         alert("데이터 저장에 실패했습니다.");
+        return null;
       }
     } catch (error) {
       console.error("데이터 저장 오류:", error);
       alert("저장 중 오류 발생");
+      return null;
     }
   };
 
@@ -77,6 +87,29 @@ export default function SimpleTextDisplay() {
       if (data.placeInfo) {
         setPlaceInfo(data.placeInfo);
         await savePlaceToDB(place, data.placeInfo, data.placeUrl, data.placeDesc); // 🔥 RDS 저장 로직 추가        
+      } else if(data.searchUrl || data.finalUrl) {
+        const placeId = await savePlaceToDB(place, [], "", []); // 🔥 RDS 저장 후 ID 받기
+        const failedUrlRequest = {
+          searchUrl: data.searchUrl || "",
+          finalUrl: data.finalUrl || "",
+          pid: placeId
+        };
+
+        const saveFailedUrlResponse = await fetch(`${API_URL}/api/saveFailedUrl`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(failedUrlRequest),
+          mode: "cors",
+          credentials: "include", // 쿠키 사용 시 필요
+        });
+        if (saveFailedUrlResponse.ok) {
+          const message = await saveFailedUrlResponse.text();
+          alert(message); // "실패한 URL이 저장되었습니다."
+        } else {
+          alert("서버 작업요청에 실패 하였습니다.");
+        }
       } else {
         alert("실시간 반영이 되지 않았습니다. 서버에 작업요청이 되었으니 추후 확인하시거나 새로고침 후 다시 시도해 주세요.");
       }

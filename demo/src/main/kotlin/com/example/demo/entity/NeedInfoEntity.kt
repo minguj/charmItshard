@@ -9,6 +9,7 @@ data class NeedInfoEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    val pid: Long? = null,
     val searchUrl: String?,
     val finalUrl: String?,
 
@@ -16,5 +17,5 @@ data class NeedInfoEntity(
 )
 {
     // 기본 생성자 추가
-    constructor() : this(null, "", "", false)
+    constructor() : this(null, null, "", "", false)
 }

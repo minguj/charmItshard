@@ -97,7 +97,7 @@ class PlaceController (
         val cleanTitle = Jsoup.parse(request.place.title).text()   
 
         val (placemapx, placemapy) = convertTMToWGS84(request.place.mapx?.toDouble() ?: 0.0, request.place.mapy?.toDouble() ?: 0.0)
-        val existingPlace = placeRepository.findByPlaceUrl(request.placeUrl)
+        val existingPlace = placeRepository.findByTitleAndAddress(cleanTitle, request.place.address ?: "")
         
         // ✅ 외부 지하철 API 호출
         val subwayInfo = getNearestSubwayInfo(placemapy, placemapx) ?: emptyList()
@@ -131,11 +131,12 @@ class PlaceController (
 
         return if (existingPlace != null) {
             // 기존 데이터가 있는 경우 업데이트
-            placeRepository.save(placeEntity)
-            ResponseEntity.ok("해당 가게 정보를 업데이트 했습니다.")
+            val savedEntity = placeRepository.save(placeEntity)
+            ResponseEntity.ok(savedEntity.id.toString())
+
         } else {
             // 새로운 데이터 추가
-            placeRepository.save(placeEntity)
+            val savedEntity = placeRepository.save(placeEntity)
     
             // addressT 테이블에 지역/구 정보 저장
             val addressTokens = request.place.address?.split(" ") ?: emptyList()
@@ -156,7 +157,7 @@ class PlaceController (
                 }
             }
     
-            ResponseEntity.ok("데이터가 성공적으로 저장되었습니다!")
+            ResponseEntity.ok(savedEntity.id.toString())
         }
     }
     
@@ -219,14 +220,11 @@ class PlaceController (
             }
     
             if (placeLinkElement == null) {
-                needInfoRepository.save(
-                    NeedInfoEntity(
-                        searchUrl = searchUrl,
-                        finalUrl = null,
-                        process = false
-                    )
+                return mapOf(
+                    "error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.",
+                    "searchUrl" to searchUrl,
+                    "finalUrl" to ""
                 )
-                return mapOf("error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.")
             }
     
             val placeLink = placeLinkElement.attr("href") ?: ""
@@ -268,14 +266,11 @@ class PlaceController (
                     }
     
                     if (!placeInfoLoaded || !placeDescLoaded) {
-                        needInfoRepository.save(
-                            NeedInfoEntity(
-                                searchUrl = null,
-                                finalUrl = finalUrl,
-                                process = false
-                            )
+                        return mapOf(
+                            "error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.",
+                            "searchUrl" to "",
+                            "finalUrl" to finalUrl
                         )
-                        return mapOf("error" to "❌ 상세 페이지 로딩에 실패했습니다.")
                     }
     
                     val placeInfo = infoDocument.select("div.woHEA ul.JU0iX li.c7TR6 div, div.woHEA ul.JU0iX li.c7TR6 span")

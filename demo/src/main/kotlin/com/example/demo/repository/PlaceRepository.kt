@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 interface PlaceRepository : JpaRepository<PlaceEntity, Long> {
     fun findByTitle(title: String): PlaceEntity?
     override fun findAll(pageable: Pageable): Page<PlaceEntity>
-    fun findByPlaceUrl(placeUrl: String): PlaceEntity?
+    fun findByTitleAndAddress(title: String, address: String?): PlaceEntity?
 
     // ✅ 필터링 메서드 추가
     @Query("""
