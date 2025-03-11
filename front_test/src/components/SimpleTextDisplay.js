@@ -56,12 +56,7 @@ export default function SimpleTextDisplay() {
         if (message === '0') {
           alert("데이터 저장 오류.");
           return null;
-        } else {
-          if (Array.isArray(placeInfo) && placeInfo.length > 0) {
-            alert("데이터 수집 내용이 업데이트 되었습니다. 콜키지 리스트에서 결과를 확인해 보세요.");
-          }
-          return message;
-        }
+        } else return message;
       } else {
         alert("데이터 저장에 실패했습니다.");
         return null;
@@ -77,21 +72,12 @@ export default function SimpleTextDisplay() {
     setLoading(true);
     const cleanTitle = place.title.replace(/<[^>]+>/g, "");
     const townInfo = getTownInfoFromAddress(place.address);
-
+    const searchUrl = `https://m.search.naver.com/search.naver?query=${encodeURIComponent(cleanTitle + " " + townInfo)}`
     try {
-      const response = await fetch(
-        `${API_URL}/api/getplaceurl?query=${encodeURIComponent(cleanTitle + " " + townInfo)}`
-      );
-      const data = await response.json();
-
-      if (data.placeInfo) {
-        setPlaceInfo(data.placeInfo);
-        await savePlaceToDB(place, data.placeInfo, data.placeUrl, data.placeDesc); // 🔥 RDS 저장 로직 추가        
-      } else if(data.searchUrl || data.finalUrl) {
         const placeId = await savePlaceToDB(place, [], "", []); // 🔥 RDS 저장 후 ID 받기
         const failedUrlRequest = {
-          searchUrl: data.searchUrl || "",
-          finalUrl: data.finalUrl || "",
+          searchUrl: searchUrl,
+          finalUrl: "",
           pid: placeId
         };
 
@@ -110,12 +96,9 @@ export default function SimpleTextDisplay() {
         } else {
           alert("서버 작업요청에 실패 하였습니다.");
         }
-      } else {
-        alert("실시간 반영이 되지 않았습니다. 서버에 작업요청이 되었으니 추후 확인하시거나 새로고침 후 다시 시도해 주세요.");
-      }
     } catch (error) {
-      console.error("네이버 검색 오류:", error);
-      alert("검색 중 오류 발생");
+      console.error("작업요청 URL 저장오류 : ", error);
+      alert("작업 요청중 오류 발생");
     } finally {
       setLoading(false);
     }

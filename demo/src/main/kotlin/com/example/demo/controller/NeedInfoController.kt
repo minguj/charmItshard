@@ -48,7 +48,7 @@ class NeedINfoController(
                     process = false
                 )
             )
-            ResponseEntity.ok("정보 수집에 실패한 URL이 저장되었습니다. 추후 서버에서 작업을 진행합니다.")
+            ResponseEntity.ok("정보 수집이 필요한 상호가 등록 되었습니다. 곧 서버에서 작업을 진행합니다.")
         }       
 
     }

@@ -287,7 +287,7 @@ export default function PlaceListPage() {
               <div style={{ margin: "8px 0", color: "#444" }}>
                 <p style={{ fontWeight: "bold" }}>🚇 가까운 지하철</p>
                 <ul style={{ listStyleType: "none", padding: 0 }}>
-                  {getSubwayInfo(place.nearbySubways).map((subway, index) => (
+                  {getSubwayInfo(place.nearbySubways).slice(0,3).map((subway, index) => (
                     <li key={index} style={{ marginBottom: "5px" }}>
                       <span style={{ fontWeight: "bold" }}>{subway.station}</span> - 
                       <span

@@ -36,6 +36,9 @@ import org.jsoup.Connection
 import kotlin.random.Random
 import kotlin.text.toDouble
 import kotlin.text.toDoubleOrNull
+import org.jsoup.nodes.Document
+import java.io.IOException
+import java.util.regex.Pattern
 import java.lang.Thread.sleep
 import net.datafaker.Faker
 
@@ -176,127 +179,7 @@ class PlaceController (
 
         val isLastPage = (start + display > (response.body?.get("total") as Int))
         return ResponseEntity.ok(mapOf("results" to response.body?.get("items"), "isLastPage" to isLastPage))
-    }    
-
-    @GetMapping("/getplaceurl")
-    fun getPlaceUrl(@RequestParam query: String): Map<String, Any> {
-        val searchUrl = "https://m.search.naver.com/search.naver?query=$query"
-    
-        try {
-            val randomUserAgent = faker.internet().userAgent()
-            println("🕵️ 사용된 User-Agent: $randomUserAgent")
-    
-            sleep((1000..3000).random().toLong()) // 초기 대기 시간
-    
-            // 🔥 검색 결과 페이지를 한 번만 요청
-            val document = Jsoup.connect(searchUrl)
-                .userAgent(randomUserAgent)
-                .referrer("http://www.naver.com")
-                .header("Accept-Language", "en-US,en;q=0.9")
-                .header("Connection", "keep-alive")
-                .timeout(10000)
-                .get()
-    
-            // ✅ 검색 결과 로딩 대기 (최대 10초)
-            val maxWaitTimeMs = 3000L
-            val checkIntervalMs = 500L
-            var elapsedTime = 0L
-            var placeLinkElement: org.jsoup.nodes.Element? = null
-    
-            while (elapsedTime < maxWaitTimeMs) {
-                placeLinkElement = document.selectFirst("div#_title a")
-                if (placeLinkElement != null) {
-                    println("✅ 검색 결과 페이지 로딩 완료!")
-                    break
-                }
-                sleep(checkIntervalMs)
-                elapsedTime += checkIntervalMs
-                println("⏳ 검색 결과 페이지 로딩 대기 중... ($elapsedTime ms)")
-            }
-    
-            if (placeLinkElement == null) {
-                return mapOf(
-                    "error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.",
-                    "searchUrl" to searchUrl,
-                    "finalUrl" to ""
-                )
-            }
-    
-            val placeLink = placeLinkElement.attr("href") ?: ""
-            if (placeLink.isNotEmpty()) {
-                val placeId = Regex("/restaurant/(\\d+)").find(placeLink)?.groupValues?.get(1)
-    
-                if (placeId != null) {
-                    val finalUrl = "https://m.place.naver.com/restaurant/$placeId/information"
-                    val c_randomUserAgent = faker.internet().userAgent()
-                    println("🕵️ 사용된 User-Agent: $c_randomUserAgent")
-    
-                    sleep((1000..3000).random().toLong())
-    
-                    // 🔥 상세 페이지를 한 번만 요청 잘 안붙는데
-                    val infoDocument = Jsoup.connect(finalUrl)
-                        .userAgent(c_randomUserAgent)
-                        .referrer("http://www.naver.com")
-                        .header("Accept-Language", "en-US,en;q=0.9")
-                        .timeout(10000)
-                        .get()
-    
-                    // ✅ 상세 페이지 로딩 대기 (최대 10초)
-                    elapsedTime = 0L
-                    var placeInfoLoaded = false
-                    var placeDescLoaded = false
-    
-                    while (elapsedTime < maxWaitTimeMs) {
-                        placeInfoLoaded = infoDocument.selectFirst("div.woHEA ul.JU0iX li.c7TR6 div") != null
-                        placeDescLoaded = infoDocument.selectFirst("div.T8RFa.CEyr5") != null
-                        
-                        if (placeInfoLoaded && placeDescLoaded) {
-                            println("✅ 상세 페이지 로딩 완료!")
-                            break
-                        }
-    
-                        sleep(checkIntervalMs)
-                        elapsedTime += checkIntervalMs
-                        println("⏳ 상세 페이지 로딩 대기 중... ($elapsedTime ms)")
-                    }
-    
-                    if (!placeInfoLoaded || !placeDescLoaded) {
-                        return mapOf(
-                            "error" to "❌ 검색 결과 페이지 로딩에 실패했습니다.",
-                            "searchUrl" to "",
-                            "finalUrl" to finalUrl
-                        )
-                    }
-    
-                    val placeInfo = infoDocument.select("div.woHEA ul.JU0iX li.c7TR6 div, div.woHEA ul.JU0iX li.c7TR6 span")
-                        .map { it.text().trim() }
-                        .filter { it.isNotEmpty() }
-    
-                    val placeDesc = infoDocument.select("div.T8RFa.CEyr5")
-                        .map { it.wholeText().trim() }
-                        .filter { it.isNotEmpty() }
-                        .joinToString("\n")
-    
-                    val corkageInfoList = TextUtils.extractCorkageInfo(placeDesc.trimIndent())
-                    println("📜 콜키지 추가정보: $corkageInfoList")
-    
-                    return mapOf(
-                        "placeUrl" to finalUrl,
-                        "placeInfo" to placeInfo,
-                        "placeDesc" to corkageInfoList
-                    )
-                } else {
-                    return mapOf("error" to "❌ placeId를 찾을 수 없습니다.")
-                }
-            } else {
-                return mapOf("error" to "❌ 가게 링크를 찾을 수 없습니다.")
-            }
-    
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return mapOf("error" to "JSoup 요청 실패: ${e.message}")
-        }
-    }    
+    }   
 
     private fun getNearestSubwayInfo(mapx: Double, mapy: Double): List<Map<String, Any>> {
         val response = RestTemplate().getForObject(openApiSubwayUrl, Map::class.java) as Map<String, Any>
@@ -318,7 +201,10 @@ class PlaceController (
             } else {
                 null
             }
-        }    
+        }
+        .distinctBy { it["station_name"]}
+        .sortedBy { it["distance_m"] as Double }
+
         return nearbyStations
     }
 }
