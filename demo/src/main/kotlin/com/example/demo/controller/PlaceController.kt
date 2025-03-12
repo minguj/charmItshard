@@ -75,23 +75,6 @@ class PlaceController (
 
     @PostMapping("/savePlace")
     fun savePlace(@RequestBody request: PlaceRequest): ResponseEntity<String> {
-        val placeDesc = request.placeDesc?.joinToString(",") ?: ""
-
-        // ✅ 콜키지 가능 여부 확인 (placeDesc + request.placeInfo 모두 체크)
-        val isCorkageAvailable = listOf("콜키지", "corkage", "병입료", "주류반입")
-            .any { keyword -> 
-                placeDesc.contains(keyword) && 
-                !listOf("주류반입 금지", "주류반입금지").any { noKeyword -> 
-                    placeDesc.contains(noKeyword) 
-                }
-            } || request.placeInfo.contains("콜키지 가능")
-
-        // ✅ 무료 콜키지 여부 확인 (placeDesc + request.placeInfo 모두 체크)
-        val isFreeCorkage = listOf("콜키지 무료", "콜키지무료", "콜키지프리", "콜키지 프리", "무료", "프리")
-            .any { keyword -> 
-                placeDesc.contains(keyword) 
-            } || request.placeInfo.contains("무료")
-
         val cleanTitle = Jsoup.parse(request.place.title).text()   
 
         val (placemapx, placemapy) = convertTMToWGS84(request.place.mapx?.toDouble() ?: 0.0, request.place.mapy?.toDouble() ?: 0.0)
@@ -119,11 +102,11 @@ class PlaceController (
             roadAddress = request.place.roadAddress,
             mapx = request.place.mapx,
             mapy = request.place.mapy,
-            placeUrl = request.placeUrl, // 🔥 placeUrl 저장
-            corkageAvailable = isCorkageAvailable,
-            freeCorkage = isFreeCorkage,
-            placeInfo = request.placeInfo.joinToString(","), // 리스트를 문자열로 변환
-            corkageInfolist = placeDesc,
+            placeUrl = existingPlace?.placeUrl,
+            corkageAvailable = existingPlace?.corkageAvailable ?: false,
+            freeCorkage = existingPlace?.freeCorkage ?: false,
+            placeInfo = existingPlace?.placeInfo,
+            corkageInfolist = existingPlace?.corkageInfolist,
             nearbySubways = formattedSubList
         )
 

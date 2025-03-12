@@ -17,7 +17,7 @@ class NeedINfoController(
     @PostMapping("/saveFailedUrl")
     fun saveFailedUrl(@RequestBody request: FailedUrlRequest): ResponseEntity<String> {
 
-        val existingEntity = needInfoRepository.findBySearchUrlAndFinalUrl(request.searchUrl ?: "", request.finalUrl ?: "")
+        val existingEntity = needInfoRepository.findBySearchUrlAndFinalUrlAndProcess(request.searchUrl ?: "", request.finalUrl ?: "", 0)
         if (existingEntity != null) {
             return ResponseEntity.ok("이미 동일한 URL이 정보수집 요청 되어 있습니다.")
         }
@@ -32,7 +32,7 @@ class NeedINfoController(
                 searchUrl = request.searchUrl ?: existingPidEntity.searchUrl,
                 finalUrl = request.finalUrl ?: existingPidEntity.finalUrl,
                 pid = request.pid,
-                process = existingPidEntity.process // 기존 값 유지
+                process = 0
             )
             // 새로운 엔티티 저장
             needInfoRepository.save(updatedEntity)
@@ -45,7 +45,7 @@ class NeedINfoController(
                     searchUrl = request.searchUrl,
                     finalUrl = request.finalUrl,
                     pid = request.pid,
-                    process = false
+                    process = 0
                 )
             )
             ResponseEntity.ok("정보 수집이 필요한 상호가 등록 되었습니다. 곧 서버에서 작업을 진행합니다.")

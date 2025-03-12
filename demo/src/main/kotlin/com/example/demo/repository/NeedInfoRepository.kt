@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface NeedInfoRepository : JpaRepository<NeedInfoEntity, Long> {
     fun findByPid(pid: Long): NeedInfoEntity?
-    fun findBySearchUrlAndFinalUrl(searchUrl: String, finalUrl: String): NeedInfoEntity?
+    fun findBySearchUrlAndFinalUrlAndProcess(searchUrl: String, finalUrl: String, process: Int): NeedInfoEntity?
 }

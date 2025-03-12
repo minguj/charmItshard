@@ -13,9 +13,9 @@ data class NeedInfoEntity(
     val searchUrl: String?,
     val finalUrl: String?,
 
-    val process: Boolean
+    val process: Int
 )
 {
     // 기본 생성자 추가
-    constructor() : this(null, null, "", "", false)
+    constructor() : this(null, null, "", "", 0)
 }
