@@ -1,4 +1,8 @@
 spring:
+  data:
+    redis:
+      host: 3.38.20.147
+      port: 6379
   datasource:
     url: jdbc:mysql://charmitshard.c9si8s82idtr.ap-northeast-2.rds.amazonaws.com:3306/charmitshard?serverTimezone=Asia/Seoul
     username: admin
