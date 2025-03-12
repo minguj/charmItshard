@@ -10,7 +10,7 @@ import org.springframework.data.redis.core.StringRedisTemplate
 class RedisConfig {
     @Bean
     fun redisConnectionFactory(): RedisConnectionFactory {
-        return LettuceConnectionFactory("localhost", 6379) // Redis 서버 주소
+        return LettuceConnectionFactory("3.38.20.147", 6379) // Redis 서버 주소
     }
 
     @Bean
