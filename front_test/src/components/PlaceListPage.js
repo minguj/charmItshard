@@ -144,7 +144,6 @@ export default function PlaceListPage() {
 
   return (
     <div style={{ maxWidth: "600px", margin: "50px auto", textAlign: "center" }}>
-      <h1 style={{ fontSize: "2rem", marginBottom: "20px", color: "#333" }}>콜키지 가능한 장소 리스트</h1>
 
       {/* 🔍 검색 입력창 및 버튼 추가 */}
       <div style={{ marginBottom: "20px" }}>
