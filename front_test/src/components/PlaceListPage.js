@@ -65,7 +65,7 @@ export default function PlaceListPage() {
         setAddresses(data);
       }
     } catch (error) {
-      console.error("주소 API 호출 오류:", error);
+      console.error("주소 API 호출 에러:", error);
     }
   };
 
