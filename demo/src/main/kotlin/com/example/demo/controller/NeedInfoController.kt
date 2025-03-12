@@ -58,7 +58,12 @@ class NeedINfoController(
             )
 
             // ✅ Redis 이벤트 발행 (새로운 URL 추가됨)
-            redisTemplate.convertAndSend("new_url", "New URL added: ${request.searchUrl}")
+            try {
+                redisTemplate.convertAndSend("new_url", "New URL added: ${request.searchUrl}")
+            } catch (e: Exception) {
+                println("❌ Redis 메시지 발행 실패: ${e.message}")
+                return ResponseEntity.internalServerError().body("Redis 메시지 발행 실패: ${e.message}")
+            }
 
             ResponseEntity.ok("정보 수집이 필요한 상호가 등록 되었습니다. 곧 서버에서 작업을 진행합니다.")
         }
