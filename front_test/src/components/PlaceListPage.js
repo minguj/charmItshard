@@ -17,7 +17,6 @@ export default function PlaceListPage() {
 
   // 📤 API 호출 함수
   const fetchPlaces = async (reset = false) => {
-    console.log("📤 fetchPlaces() 호출됨");
     setLoading(true);
 
     const cleanedSubwaySearchTerm = subwaySearchTerm.endsWith('역') 

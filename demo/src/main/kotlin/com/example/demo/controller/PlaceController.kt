@@ -156,7 +156,6 @@ class PlaceController (
         val requestEntity = org.springframework.http.HttpEntity<String>(headers)
         val response = RestTemplate().exchange(uri, org.springframework.http.HttpMethod.GET, requestEntity, Map::class.java)
 
-        println("🔍 헤더: $headers")
         println("🔍 최종 요청 URI: $uri")
         println("🔍 응답 데이터: ${response.body}")
 
