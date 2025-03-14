@@ -204,6 +204,7 @@ export default function PlaceListPage() {
         </button>
       </div>
 
+      {/* 📌 필터 선택 */}
       <div style={{ marginBottom: "20px" }}>
         <select
           value={selectedCategory}
@@ -258,89 +259,105 @@ export default function PlaceListPage() {
       </div>
 
       <div style={{ marginTop: "20px" }}>
-        {places.map((place) => (
-          <div
-            key={place.id}
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              padding: "15px",
-              marginBottom: "15px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              textAlign: "left",
-              backgroundColor: "#fff",
-            }}
-          >
-            <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#333" }}>{place.title}</h2>
-            <p style={{ margin: "8px 0", color: "#555" }}>{place.address}</p>
-            <p style={{ margin: "8px 0", color: "#444" }}>
-              콜키지 가능: {place.corkageAvailable ? "가능" : "불가능"}
-            </p>
-            <p style={{ margin: "8px 0", color: "#444" }}>
-              콜키지 비용: {place.corkageAvailable ? (place.freeCorkage ? "무료" : "유료") : "콜키지 불가능"}
-            </p>
+        {places.map((place) => {
+          const corkageList = place.corkageInfolist
+            ? place.corkageInfolist.split("\n").filter((line) => line.trim() !== "")
+            : [];
+          
+          return (
+            <div
+              key={place.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                padding: "15px",
+                marginBottom: "15px",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                textAlign: "left",
+                backgroundColor: "#fff",
+              }}
+            >
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#333" }}>{place.title}</h2>
+              <p style={{ margin: "8px 0", color: "#555" }}>{place.address}</p>
+              <p style={{ margin: "8px 0", color: "#444", fontWeight: place.freeCorkage ? "bold" : "normal", color: place.freeCorkage ? "red" : "#444" }}>
+                콜키지 비용: {place.corkageAvailable ? (place.freeCorkage ? "무료" : "유료") : "콜키지 불가능"}
+              </p>
+              
+              {corkageList.length > 0 && (
+                <div style={{ margin: "8px 0", padding: "10px", borderRadius: "5px", backgroundColor: "#f9f9f9" }}>
+                  <p style={{ fontWeight: "bold" }}>🍷 콜키지 정보</p>
+                  <ul style={{ listStyleType: "none", padding: 0 }}>
+                    {corkageList.map((info, index) => (
+                      <li key={index} style={{ marginBottom: "5px" }}>{info}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {place.nearbySubways && place.nearbySubways.length > 0 && (
+                <div style={{ margin: "8px 0", padding: "10px", borderRadius: "5px", backgroundColor: "#f9f9f9" }}>
+                  <p style={{ fontWeight: "bold" }}>🚇 가까운 지하철</p>
+                  <ul style={{ listStyleType: "none", padding: 0 }}>
+                    {getSubwayInfo(place.nearbySubways).slice(0,3).map((subway, index) => (
+                      <li key={index} style={{ marginBottom: "5px" }}>
+                        <span style={{ fontWeight: "bold" }}>{subway.station}</span> - 
+                        <span
+                          style={{
+                            backgroundColor: subwayLineColors[subway.line] || "#666",
+                            color: "#fff",
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            marginLeft: "5px",
+                          }}
+                        >
+                          {subway.line}
+                        </span>
+                        <span style={{ marginLeft: "5px", color: "#888" }}>{subway.distance}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}  
 
-            {/* ✅ 지하철 정보 추가 (색상 적용) */}
-            {place.nearbySubways && place.nearbySubways.length > 0 && (
-              <div style={{ margin: "8px 0", color: "#444" }}>
-                <p style={{ fontWeight: "bold" }}>🚇 가까운 지하철</p>
-                <ul style={{ listStyleType: "none", padding: 0 }}>
-                  {getSubwayInfo(place.nearbySubways).slice(0,3).map((subway, index) => (
-                    <li key={index} style={{ marginBottom: "5px" }}>
-                      <span style={{ fontWeight: "bold" }}>{subway.station}</span> - 
-                      <span
-                        style={{
-                          backgroundColor: subwayLineColors[subway.line] || "#666",
-                          color: "#fff",
-                          padding: "3px 8px",
-                          borderRadius: "4px",
-                          marginLeft: "5px",
-                        }}
-                      >
-                        {subway.line}
-                      </span>
-                      <span style={{ marginLeft: "5px", color: "#888" }}>{subway.distance}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}  
+              {/* "상세보기" 버튼 스타일링 */}
+              {place.placeUrl && (
+                <div style={{ marginTop: "10px", textAlign: "right" }}>
+                  <a
+                    href={place.placeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 12px",
+                      borderRadius: "4px",
+                      backgroundColor: "#2196F3",
+                      color: "#fff",
+                      textDecoration: "none",
+                      fontSize: "14px",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    상세보기
+                  </a>
+                </div>
+              )}     
 
-            {place.placeUrl && (
-              <a
-                href={place.placeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#2196F3", textDecoration: "none" }}
-              >
-                상세보기
-              </a>
-            )}       
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {loading && <p>로딩 중...</p>}
-
       {!loading && hasMore && (
         <button
           onClick={() => setPage((prevPage) => prevPage + 1)}
-          style={{
-            padding: "10px 20px",
-            marginTop: "20px",
-            border: "none",
-            borderRadius: "4px",
-            backgroundColor: "#4CAF50",
-            color: "#fff",
-            cursor: "pointer",
-            transition: "background 0.3s",
-          }}
+          style={{ padding: "10px 20px", marginTop: "20px", border: "none", borderRadius: "4px", backgroundColor: "#4CAF50", color: "#fff", cursor: "pointer" }}
         >
           더보기
         </button>
       )}
-
       {!hasMore && <p>모든 데이터를 불러왔습니다.</p>}
     </div>
   );
+
 }
